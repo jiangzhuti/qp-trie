@@ -23,7 +23,7 @@ QP-Trie来自于 https://fanf.livejournal.com/137283.html
 
 ## TODO
 
-- [x] 实现迭代器（目前好像有bug）
+- [x] 实现迭代器
 - [x] 实现非递归遍历，优化前缀查找性能
 - [x] 实现KV功能
 - [ ] `set`和`map`类型定义
