@@ -13,7 +13,7 @@ QP-Trie来自于 https://fanf.livejournal.com/137283.html
 5. 原始C语言版本只支持C风格字符串`char*`作为key。这里为了通用性，只要是满足`std::is_convertible<std::string_view, T>`的类型`T`都可以作为key。比如`std::string`或者是实现了`operator std::string_view()`的自定义类型。但是代价是增加了叶子结点的大小(由于实际存储的`Node`是`variant<Leaf, Branch>`，所有节点大小都会增加)。
 6. 据上所述，以`char*`作为key时，节点大小最小(在我的机器上：`sizeof(Leaf)==8`, `sizeof(Branch)==16`, `sizeof(Node)==max(8, 16)+8==24`)
 7. `char*`为key和原版比起来，存在一个问题：在内部逻辑中，统一用`std::string_view`处理key，会根据key构造一些`std::string_view`的临时对象。`char*`转`string_view`会调用`strlen`，所以和`std::string`作为key相比，性能会有一定损失。
-8. 使用了hat-trie(https://github.com/Tessil/hat-trie)的测试程序进行初步测试。数据用了wikipedia 20200801的标题集合, shuf打乱顺序。和hat-trie作者给出的结果类似，qp-trie在这种大量前缀概率高的短字符串场景下表现不理想。
+8. 使用了hat-trie( https://github.com/Tessil/hat-trie )的测试程序进行初步测试。数据用了wikipedia 20200801的标题集合, shuf打乱顺序。和hat-trie作者给出的结果类似，qp-trie在这种大量前缀概率高的短字符串场景下表现不理想。
 
     a. 和哈希表类结构相比： 插入耗时是`std::unordered_map`和`htrie_map`的3倍左右，查询耗时是他们的5倍左右，内存消耗比`std::unordered_map`的略低，是`hat-trie`的3倍多。原因是这种大量前缀概率高的短字符串场景下，qp-trie的压缩数组带来的空间收益不明显，而且动态数组会频繁扩容，产生大量的小内存的申请和释放。由于前缀概率高，导致分支层次变得很深，相比哈希表，一次查询会引起更多次寻址
 
