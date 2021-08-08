@@ -7,7 +7,7 @@ QP-Trie来自于 https://fanf.livejournal.com/137283.html
 
 1. 在`qp-trie-rs`中, `head`叶子节点位于数组最开始，导致了就算没有`head`叶子节点，也要额外留出数组下标0的位置。本实现改为在数组末尾存放，减少一部分空间消耗。
 2. 使用了c++17的`variant`代替`union`。跟原始C语言版比起来，每个节点增加了额外字节消耗(`variant`中用于标识类型的字段)
-3. 我之前仿照`qp-trie-rs`，在`branch`中用一个`vector`存放`twigs`。这样会额外引入16字节的空间消耗。后来还是用了原版c实现的方式，自己搞了个简单的动态数组，为了简化实现，从位域`index`中借用10字节作为动态数组的`size`和`capacity`。这样只能存储最长2^36字节的字符串，不过也够用了。现在一个`branch`固定消耗16字节，和C
+3. 我之前仿照`qp-trie-rs`，在`branch`中用一个`vector`存放`twigs`。这样会额外引入16字节的空间消耗。后来还是用了原版c实现的方式，自己搞了个简单的动态数组，为了简化实现，从位域`index`中借用10比特作为动态数组的`size`和`capacity`。这样只能存储最长2^36字节的字符串，不过也够用了。现在一个`branch`固定消耗16字节，和C
 版本一样
 4. 由于使用了`variant`，节点不再是`trivially_copyable`，所以动态数组不能用`realloc`以及`memove`，与C版本比性能会有一定损失
 5. 原始C语言版本只支持C风格字符串`char*`作为key。这里为了通用性，只要是满足`std::is_convertible<std::string_view, T>`的类型`T`都可以作为key。比如`std::string`或者是实现了`operator std::string_view()`的自定义类型。但是代价是增加了叶子结点的大小(由于实际存储的`Node`是`variant<Leaf, Branch>`，所有节点大小都会增加)。
