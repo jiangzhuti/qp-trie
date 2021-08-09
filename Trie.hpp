@@ -517,7 +517,7 @@ public:
         return false;
     }
     template <typename ...DataArgs>
-    bool emplace(DataArgs... args) //todo. bool -> optional<iterator>
+    bool emplace(DataArgs&&... args) //todo. bool -> optional<iterator>
     {
         LeafType new_leaf(std::forward<DataArgs>(args)...);
         auto key_sv = std::string_view(new_leaf.get_key());
@@ -913,7 +913,7 @@ public:
         return iterator_end;
     }
     template <typename ...Args, std::enable_if_t<std::is_constructible_v<LeafType, Args...>, bool> = true>
-    void emplace(Args... args)
+    void emplace(Args&&... args)
     {
         if (!root) {
             root.emplace(std::forward<Args>(args)...);
