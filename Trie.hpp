@@ -336,14 +336,13 @@ public:
     NodeType* get_head()
     {
         assert(head);
-        return &(twigs[size - 1]);
+        return &(twigs[0]);
     }
     void remove_head()
     {
         assert(head);
         assert(size > 0);
-        twigs[size - 1].~NodeType();
-        size--;
+        twig_erase_at(0);
         head = false;
     }
     NodeType* twig(TwigIndexType idx)
@@ -368,7 +367,7 @@ public:
     TwigIndexType twig_index(NybbleType n) const
     {
         assert(n != NybbleHead);
-        return __builtin_popcount(bitmap & ((1 << n) - 1));
+        return __builtin_popcount(bitmap & ((1 << n) - 1)) + head;
     }
 
     void twig_insert(LeafType&& leaf, NybbleType n)
@@ -376,7 +375,7 @@ public:
         if (n == NybbleHead) {
             assert(!head);
             head = true;
-            twig_emplace_back(std::move(leaf));
+            twig_emplace_at(0, std::move(leaf));
             return;
         }
         assert (!has_twig(n));
@@ -429,17 +428,9 @@ public:
         while (node->is_branch()) {
             auto& branch = std::get<BranchType>(node->v);
             NybbleType n = branch.twig_nybble(key);
-            if (n == NybbleHead) {
-                if (branch.has_head()) {
-                    node = branch.get_head();
-                } else {
-                    node = branch.twig(0);
-                }
-            } else if (branch.has_twig(n)) {
+            if (n != NybbleHead && branch.has_twig(n)) {
                 TwigIndexType idx = branch.twig_index(n);
                 node = branch.twig(idx);
-            } else if (branch.has_head()) {
-                node = branch.get_head();
             } else {
                 node = branch.twig(0);
             }
@@ -517,7 +508,7 @@ public:
         return false;
     }
     template <typename ...DataArgs>
-    bool emplace(DataArgs&&... args) //todo. bool -> optional<iterator>
+    bool emplace(DataArgs&&... args)
     {
         LeafType new_leaf(std::forward<DataArgs>(args)...);
         auto key_sv = std::string_view(new_leaf.get_key());
@@ -659,14 +650,14 @@ public:
             } else {
                 Node* another = nullptr;
                 if (parent.head) {
-                    another = branch.twig(0);
+                    another = branch.twig(1);
                 } else {
                     TwigIndexType leaf_idx = branch.twig_index(parent.n);
                     assert(leaf_idx == 0 || leaf_idx == 1);
                     if (leaf_idx == 0) {
-                        another = branch.twig(1);//maybe head
+                        another = branch.twig(1);
                     } else {
-                        another = branch.twig(0);
+                        another = branch.twig(0);//maybe head
                     }
                 }
                 Node saved(std::move(*another));
@@ -710,17 +701,9 @@ struct IteratorBase
             auto& branch = node->get_branch();
             auto sz = branch.twig_count();
             assert(sz >= 2);
-            if (branch.has_head()) {
-                sz -= 2;
-                for (int i = sz; i >= 0; i-- ) {
-                    stk.push(branch.twig(i));
-                }
-                stk.push(branch.get_head());
-            } else {
-                sz -= 1;
-                for (int i = sz; i >= 0; i-- ) {
-                    stk.push(branch.twig(i));
-                }
+            sz -= 1;
+            for (int i = sz; i >= 0; i-- ) {
+                stk.push(branch.twig(i));
             }
         }
         return node;
